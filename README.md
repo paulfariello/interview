@@ -1,0 +1,149 @@
+Interview
+=========
+
+Technical interview
+
+Installation
+------------
+
+Interview REST server being based on peewee it is supposed to support a wide range of database systems.
+Currently, only SQLite3 and Postegresql are eavily tested.
+You are more than welcome to test Interview with another database systems.
+
+Here is the 3 steps required to run Interview web app.
+
+Install web app dependencies:
+```
+cd client/ && npm install
+```
+
+Build web app and install Interview:
+```
+./waf-1.8.21 configure build install --destdir=$(pwd)
+```
+
+Then go to built server directory and run Interview server:
+```
+cd usr/local/share/interview/server/
+./server.py --static ../static/ --init
+```
+
+> `--init` option should only be used on first run as it will create the database tables
+
+Here you go, Interview should be running on http://127.0.0.1:8080
+
+Durable installation
+--------------------
+
+In order to have a more durable installation you should consider using another web server and database.
+Here the procedure to run Interview server behind nginx, with gunicorn and postgresql.
+
+First you should build and install Interview to a standard directory:
+```
+./waf-1.8.21 configure build install
+```
+
+Ensure your database is configured to use UTF-8 encoding, either with initdb:
+```
+initdb -D /var/postgresql/data -U postgres -E UTF8 -A md5 -W
+```
+or when creating the database:
+```SQL
+CREATE DATABASE interview WITH ENCODING 'UTF-8' OWNER interview;
+```
+
+Configure your nginx to proxy request to gunicorn and serve static files:
+```
+server {
+        listen 80;
+        root /usr/local/share/interview/static/;
+
+        location /api/ {
+                proxy_pass http://127.0.0.1:8080;
+        }
+}
+```
+
+And finally run Interview with gunicorn (here with 4 workers):
+```
+/usr/local/share/interview/server/server.py --db postgresql://user:password@localhost:5432/interview --server gunicorn -w 4
+```
+
+
+Architecture
+------------
+
+Interview is mainly a REST server based on:
+ - [peewee](https://github.com/coleifer/peewee)
+ - [bottle](http://bottlepy.org/docs/dev/index.html)
+
+We provide a default web client based on:
+ - [angularjs](https://angularjs.org/)
+ - [foundation-sites](http://foundation.zurb.com/sites/docs/)
+
+API
+---
+
+Up-to-date documentation of the API can be found in server/server.py.
+
+Server manual
+-------------
+
+Up-to-date server manual is available with:
+```
+./server.py --help
+```
+
+```
+usage: server.py [-h] [-l HOST] [-p PORT] [--db DB] [--static STATIC]
+                 [--server SERVER] [--init]
+
+Interview
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -l HOST, --listen HOST
+                        IP address to bind to
+  -p PORT, --port PORT  Port to listen to
+  --db DB               Database scheme to connect to
+  --static STATIC       Path to static files
+  --server SERVER       Bottle server type
+  --init                Initialize database
+```
+
+Client developement
+-------------------
+
+Install dependencies
+``` bash
+npm install
+```
+
+Serve with hot reload at localhost:8000 and proxy server request to localhost:8001
+``` bash
+npm run dev
+```
+
+Build for production with minification
+``` bash
+npm run build
+```
+
+For detailed explanation on how things work, checkout the [guide](http://vuejs-templates.github.io/webpack/) and [docs for vue-loader](http://vuejs.github.io/vue-loader).
+
+License
+-------
+
+Copyright (c) 2016 Paul Fariello <paul@fariello.eu>
+
+Permission to use, copy, modify, and distribute this software for any
+purpose with or without fee is hereby granted, provided that the above
+copyright notice and this permission notice appear in all copies.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
