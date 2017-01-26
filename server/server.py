@@ -24,6 +24,7 @@ import argparse
 import bottle
 import json
 import datetime
+from peewee import fn
 
 import uniqid
 import itw
@@ -191,6 +192,53 @@ def attach_exercice(interview_id, index):
         bottle.response.status = 404
         return {"error": "Exercice %s not found" % exercice_id}
     return json.dumps(answer.json, indent="  ")
+
+
+@bottle.post(r"/api/interview/<interview_id:re:[a-zA-Z0-9_=-]+>/exercices/")
+def attach_exercice(interview_id):
+    """Attach an exercice at the end of an interview
+
+    Exemple:
+    curl -X POST -H "Content-Type:application/json" -d '{"exercice": "4pofihCDVrJwPNGsuz9LvD"} http://localhost:8001/api/interview/PoP93u9ktzqIP5-cJx1D9D/exercices/
+    """
+    try:
+        uid = uniqid.decode(interview_id)
+        # TODO commit
+        interview = itw.Interview.get(itw.Interview.uid == uid)
+        max_index = itw.Answer.select().where(itw.Answer.interview == interview).aggregate(fn.Max(itw.Answer.index))
+        max_index = max_index or 0
+        uid = uniqid.decode(bottle.request.json['exercice'])
+        exercice = itw.Exercice.get(itw.Exercice.uid == uid)
+        answer = itw.Answer.create(interview=interview, exercice=exercice, index=max_index+1)
+    except itw.Interview.DoesNotExist as e:
+        bottle.response.status = 404
+        return {"error": "Interview %s not found" % interview_id}
+    except itw.Exercice.DoesNotExist as e:
+        bottle.response.status = 404
+        return {"error": "Exercice %s not found" % exercice_id}
+    return json.dumps(answer.json, indent="  ")
+
+
+@bottle.delete(r"/api/interview/<interview_id:re:[a-zA-Z0-9_=-]+>/exercices/<exercice_id:re:[a-zA-Z0-9_=-]+>")
+def detach_exercice(interview_id, exercice_id):
+    """Detach an exercice from an interview
+
+    Exemple:
+    curl -X DELETE -H "Content-Type:application/json" http://localhost:8001/api/interview/PoP93u9ktzqIP5-cJx1D9D/exercices/4pofihCDVrJwPNGsuz9LvD
+    """
+    try:
+        uid = uniqid.decode(interview_id)
+        interview = itw.Interview.get(itw.Interview.uid == uid)
+        uid = uniqid.decode(exercice_id)
+        exercice = itw.Exercice.get(itw.Exercice.uid == uid)
+        where = (itw.Answer.interview == interview) & (itw.Answer.exercice == exercice)
+        itw.Answer.delete().where(where).execute()
+    except itw.Interview.DoesNotExist as e:
+        bottle.response.status = 404
+        return {"error": "Interview %s not found" % interview_id}
+    except itw.Exercice.DoesNotExist as e:
+        bottle.response.status = 404
+        return {"error": "Exercice %s not found" % exercice_id}
 
 @bottle.route(r"/api/interview/<interview_id:re:[a-zA-Z0-9_=-]+>/exercices/<index:int>", method='PATCH')
 def answer_exercice(interview_id, index):

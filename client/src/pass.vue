@@ -33,7 +33,6 @@ export default {
 			var interview = this.$resource('interview/{token}/pass')
 			interview.get({token: this.$route.params.interviewToken}).then(function (response) {
 				this.interview = response.data
-				console.log(this.interview)
 				var applicant = this.$resource('applicant/{id}')
 				applicant.get({id: this.interview.applicant}).then(function (response) {
 					this.interview.applicant = response.data

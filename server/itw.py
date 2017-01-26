@@ -88,7 +88,8 @@ class Interview(ItwModel, JSONObject):
                 "applicant": uniqid.encode(self.applicant.uid),
                 "start_date": self.start_date,
                 "end_date": self.end_date,
-                "exercices": [uniqid.encode(answer.exercice.uid) for answer in self.exercices]}
+                "exercices": [uniqid.encode(answer.exercice.uid)
+                              for answer in sorted(self.exercices, key=lambda e: e.index)]}
 
 
 class Exercice(ItwModel, JSONObject):
@@ -129,7 +130,8 @@ class Answer(ItwModel):
     answer = CharField(null=True)
 
     class Meta:
-        indexes = ((('interview', 'index'), True),)
+        indexes = ((('interview', 'exercice'), True),
+                   (('interview', 'index'), True))
 
     @property
     def json(self):

@@ -22,7 +22,7 @@
 			<div class="row" v-for="exercice in exercices">
 				<div class="columns small-1">
 					<div class="switch">
-						<input class="switch-input" type="checkbox" id="{{exercice.uid}}" value="{{exercice.uid}}" v-model="interview.exercices">
+						<input class="switch-input" type="checkbox" id="{{exercice.uid}}" value="{{exercice.uid}}" v-model="interview.exercices" v-on:change="selectExercice">
 						<label class="switch-paddle" for="{{exercice.uid}}">
 							<span class="show-for-sr">{{{exercice.question}}}</span>
 						</label>
@@ -96,12 +96,16 @@ export default {
 			})
 		}
 	},
-	watch: {
-		'interview.exercices': function (e) {
-			console.log(e)
-		}
-	},
 	methods: {
+		selectExercice (e) {
+			if (e.target.checked) {
+				this.$http.post('interview/' + this.interview.uid + '/exercices/', {
+					exercice: e.target.value
+				})
+			} else {
+				this.$http.delete('interview/' + this.interview.uid + '/exercices/' + e.target.value)
+			}
+		},
 		addExercice () {
 			var exercice = this.$resource('exercice/')
 
@@ -123,9 +127,9 @@ export default {
 	filters: {
 		answeredCount (exercices) {
 			var count = 0
-			for (var i in exercices) {
-				count += exercices[i].answer !== ''
-			}
+			// for (var i in exercices) {
+			// 	count += exercices[i].answer.length > 0
+			// }
 			return count
 		}
 	}
