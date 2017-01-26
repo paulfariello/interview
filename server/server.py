@@ -99,6 +99,16 @@ def create_interview():
         return {"error": "Applicant %s not found" % applicant_id}
     return json.dumps(interview.json, indent="  ")
 
+@bottle.get(r"/api/interview/")
+def get_interview():
+    """Get all interview
+
+    Exemple:
+    curl -X GET -H "Content-Type:application/json" http://localhost:8001/api/interview/
+    """
+    interviews = itw.Interview.select().execute()
+    return json.dumps([interview.json for interview in interviews], indent="  ")
+
 
 @bottle.get(r"/api/interview/<interview_id:re:[a-zA-Z0-9_=-]+>")
 def get_interview(interview_id):
