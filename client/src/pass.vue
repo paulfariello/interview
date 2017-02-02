@@ -1,18 +1,54 @@
 <template>
-	<div class="row" v-if="$route.params.index < 1">
-		<div class="small-12 columns">
-			<h2><a v-link="{ name: 'pass', params: { interviewToken: interview.token } }"><i class="fa fa-mortar-board fa-lg fa-fw"></i>{{ interview.applicant.name }}</a></h2>
+	<template v-if="$route.params.index > 0">
+		<div class="row">
+			<div class="small-12 columns">
+				<progress :progress="interview.exercices | answeredCount" :total="interview.exercices.length"></progress>
+			</div>
 		</div>
-		<div class="small-12 columns">
-			{{interview.exercices.length}} questions over the following topics:
+		<div class="row">
+			<div class="small-1 columns">
+			</div>
+			<div class="small-10 columns">
+				{{{ exercice.question }}}<span v-for="tag in exercice.tags" class="label">{{tag}}</span>
+			</div>
+			<div class="small-1 columns">
+			</div>
 		</div>
-		<div class="small-12 columns">
-			<span v-for="tag in tags" class="label">{{tag}}</span>
+		<form v-on:submit="save">
+			<div class="row">
+				<div class="small-12 columns">
+					<textarea v-tinymce="exercice.answer" required></textarea>
+				</div>
+			</div>
+			<div class="row">
+				<div class="small-12 columns">
+					<button type="submit" class="button fa fa-user-plus">Save</button>
+				</div>
+			</div>
+		</form>
+	</template>
+	<template v-else>
+		<div class="row">
+			<div class="small-12 columns">
+				<h2><a v-link="{ name: 'pass', params: { interviewToken: interview.token } }"><i class="fa fa-mortar-board fa-lg fa-fw"></i>{{ interview.applicant.name }}</a></h2>
+			</div>
 		</div>
-		<div class="small-12 columns">
-			<a class="button" v-link="{ name: 'pass', params: { interviewToken: interview.token, index: 1 } }">Let's go !</a>
+		<div class="row">
+			<div class="small-12 columns">
+				{{interview.exercices.length}} questions over the following topics:
+			</div>
 		</div>
-	</div>
+		<div class="row">
+			<div class="small-12 columns">
+				<span v-for="tag in tags" class="label">{{tag}}</span>
+			</div>
+		</div>
+		<div class="row">
+			<div class="small-12 columns">
+				<a class="button" v-link="{ name: 'pass', params: { interviewToken: interview.token, index: 1 } }">Let's go !</a>
+			</div>
+		</div>
+	</template>
 </template>
 
 <script>
@@ -24,8 +60,13 @@ export default {
 				'token': '',
 				'exercices': []
 			},
-			'tags': {},
-			'answer': ''
+			'exercice': {
+				'uid': '',
+				'question': '',
+				'answer': '',
+				'index': 0,
+				'tags': []
+			}
 		}
 	},
 	route: {
@@ -49,6 +90,38 @@ export default {
 			}).catch(function () {
 				// TODO handle error
 			})
+
+			if (this.$route.params.index > 0) {
+				var exercice = this.$resource('interview/{token}/exercices/{index}')
+				exercice.get({
+					token: this.$route.params.interviewToken,
+					index: this.$route.params.index,
+					answer: this.$route.params.answer
+				}).then(function (response) {
+					this.exercice = response.data
+				}).catch(function () {
+				})
+			}
+		}
+	},
+	methods: {
+		save () {
+			var exercice = this.$resource('interview/' + this.$route.params.interviewToken + '/exercices/' + this.exercice.uid)
+
+			exercice.update({answer: this.exercice.answer}).then(function (response) {
+
+			}, function (response) {
+				// TODO error handling
+			})
+		}
+	},
+	filters: {
+		answeredCount (exercices) {
+			var count = 0
+			// for (var i in exercices) {
+			// 	count += exercices[i].answer.length > 0
+			// }
+			return count
 		}
 	}
 }

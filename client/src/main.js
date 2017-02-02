@@ -55,12 +55,18 @@ Vue.directive('tinymce', {
 			target: this.el,
 			skin: false,
 			init_instance_callback: function (editor) {
+				self.editor = editor
 				editor.on('change', function (e) {
 					editor.save()
 					self.set(self.el.value)
 				})
 			}
 		})
+	},
+	update: function (value) {
+		if (this.editor !== undefined) {
+			this.editor.setContent(value)
+		}
 	}
 })
 

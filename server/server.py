@@ -240,19 +240,42 @@ def detach_exercice(interview_id, exercice_id):
         bottle.response.status = 404
         return {"error": "Exercice %s not found" % exercice_id}
 
-@bottle.route(r"/api/interview/<interview_id:re:[a-zA-Z0-9_=-]+>/exercices/<index:int>", method='PATCH')
-def answer_exercice(interview_id, index):
+@bottle.route(r"/api/interview/<interview_token_or_id:re:[a-zA-Z0-9_=-]+>/exercices/<index:int>", method='GET')
+def get_answer(interview_token_or_id, index):
+    """Get answer a given exercice
+
+    Exemple:
+    curl -X GET -H "Content-Type:application/json" http://localhost:8001/api/interview/PoP93u9ktzqIP5-cJx1D9D/exercices/1
+    """
+    try:
+        uid = uniqid.decode(interview_token_or_id)
+        where = (itw.Interview.uid == uid) | (itw.Interview.token == uid)
+        interview = itw.Interview.get(where)
+        where = (itw.Answer.interview == interview) & (itw.Answer.index == index)
+        answer = itw.Answer.get(where)
+    except itw.Interview.DoesNotExist as e:
+        bottle.response.status = 404
+        return {"error": "Interview %s not found" % interview_token_or_id}
+    except itw.Answer.DoesNotExist as e:
+        bottle.response.status = 404
+        return {"error": "Exercice %s not found" % index}
+    return json.dumps(answer.json, indent="  ")
+
+@bottle.route(r"/api/interview/<interview_token:re:[a-zA-Z0-9_=-]+>/exercices/<exercice_id:re:[a-zA-Z0-9_=-]+>", method='PUT')
+def answer_exercice(interview_token, exercice_id):
     """Answer a given exercice
 
     Exemple:
-    curl -X PATCH -H "Content-Type:application/json" -d '{"answer": "42"} http://localhost:8001/api/interview/PoP93u9ktzqIP5-cJx1D9D/exercices/1
+    curl -X PUT -H "Content-Type:application/json" -d '{"answer": "42"} http://localhost:8001/api/interview/PoP93u9ktzqIP5-cJx1D9D/exercices/4pofihCDVrJwPNGsuz9LvD
     """
     try:
-        uid = uniqid.decode(interview_id)
-        interview = itw.Interview.get(itw.Interview.uid == uid)
+        uid = uniqid.decode(interview_token)
+        interview = itw.Interview.get(itw.Interview.token == uid)
+        uid = uniqid.decode(exercice_id)
+        exercice = itw.Exercice.get(itw.Exercice.uid == uid)
         answer = bottle.request.json['answer']
         # Postgresql support RETURNING keyword, could be cleaner.
-        where = (itw.Answer.interview == interview) & (itw.Answer.index == index)
+        where = (itw.Answer.interview == interview) & (itw.Answer.exercice == exercice)
         answer = itw.Answer.update(answer=answer).where(where).execute()
         answer = itw.Answer.get(where)
     except itw.Interview.DoesNotExist as e:
