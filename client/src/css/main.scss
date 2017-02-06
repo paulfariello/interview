@@ -46,21 +46,12 @@ td .button {
 	margin-bottom: 0;
 }
 
-a.edit:hover:before {
-	@extend .#{$fa-css-prefix};
-	content: $fa-var-pencil-square-o;
-}
-
-a.edit:hover {
-	margin-left: 0;
-}
-
-a.edit {
+.button.fa-after:after {
 	margin-left: 1em;
 }
 
-td .switch, td input[type="number"], th .switch {
-	margin-bottom: 0;
+.fa-caret-right-after:after {
+	content: $fa-var-caret-right;
 }
 
 .cover {
@@ -81,21 +72,4 @@ h3 {
 	margin-bottom: 1em;
 	border-bottom: 3px solid $primary-color;
 	color: $primary-color;
-}
-
-div.balance {
-	padding: 0.5em;
-}
-
-input.ng-untouched {
-	border: 1px solid $medium-gray;
-}
-
-span.label > span.remove:after {
-	@extend .#{$fa-css-prefix};
-	content: $fa-var-remove;
-}
-
-div.tags-input input[type="text"] {
-	margin: 0px;
 }

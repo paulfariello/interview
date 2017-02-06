@@ -29,24 +29,6 @@ Vue.use(VueResource)
 Vue.component('loading', Loading)
 Vue.component('progress', Progress)
 
-// Vue.directive('date-picker', {
-// 	twoWay: true,
-// 	params: ['format', 'language'],
-// 	bind: function () {
-// 		var self = this
-// 		$(this.el).fdatepicker({
-// 			initialDate: this.value,
-// 			format: this.params.format,
-// 			language: this.params.language
-// 		}).on('changeDate', function (ev) {
-// 			self.set(ev.date)
-// 		})
-// 	},
-// 	update: function (newValue) {
-// 		$(this.el).fdatepicker('update', newValue)
-// 	}
-// })
-
 Vue.directive('tinymce', {
 	twoWay: true,
 	bind: function () {
@@ -65,7 +47,11 @@ Vue.directive('tinymce', {
 	},
 	update: function (value) {
 		if (this.editor !== undefined) {
-			this.editor.setContent(value)
+			if (value !== null) {
+				this.editor.setContent(value)
+			} else {
+				this.editor.setContent('')
+			}
 		}
 	}
 })

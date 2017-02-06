@@ -26,6 +26,16 @@
 				</div>
 			</div>
 		</form>
+		<div class="row">
+			<div class="small-3 columns">
+				<a v-if="$route.params.index > 1" v-link="{name: 'pass', params: {interviewToken: interview.token, index: +$route.params.index - 1} }" class="button fa fa-caret-left">Previous</a>
+			</div>
+			<div class="small-6 columns">
+			</div>
+			<div class="small-3 columns">
+				<a v-if="$route.params.index < 10" v-link="{name: 'pass', params: {interviewToken: interview.token, index: +$route.params.index + 1} }"class="button fa-after fa-caret-right-after">Next</a>
+			</div>
+		</div>
 	</template>
 	<template v-else>
 		<div class="row">
