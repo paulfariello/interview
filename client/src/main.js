@@ -11,8 +11,6 @@ import tinymce from 'tinymce'
 import 'tinymce/themes/modern/theme'
 import 'tinymce/skins/lightgray/content.min.css'
 import 'tinymce/skins/lightgray/skin.min.css'
-// import 'foundation-datepicker/js/foundation-datepicker.js'
-// import 'foundation-datepicker/css/foundation-datepicker.scss'
 import Vue from 'vue'
 import VueRouter from 'vue-router'
 import VueResource from 'vue-resource'
@@ -30,6 +28,7 @@ Vue.component('loading', Loading)
 Vue.component('progress', Progress)
 
 Vue.directive('tinymce', {
+	params: ['update'],
 	twoWay: true,
 	bind: function () {
 		var self = this
@@ -41,6 +40,9 @@ Vue.directive('tinymce', {
 				editor.on('change', function (e) {
 					editor.save()
 					self.set(self.el.value)
+					if (self.params.update) {
+						self.params.update(self.el.value)
+					}
 				})
 			}
 		})

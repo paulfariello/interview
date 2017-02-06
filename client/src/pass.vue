@@ -14,18 +14,18 @@
 			<div class="small-1 columns">
 			</div>
 		</div>
-		<form v-on:submit="save">
+		<form>
 			<div class="row">
 				<div class="small-12 columns">
-					<textarea v-tinymce="exercice.answer" required></textarea>
-				</div>
-			</div>
-			<div class="row">
-				<div class="small-12 columns">
-					<button type="submit" class="button fa fa-user-plus">Save</button>
+					<textarea v-tinymce="exercice.answer" :update="save" required></textarea>
 				</div>
 			</div>
 		</form>
+		<div class="row">
+			<div v-if="exercice.date !== undefined" class="small-12 columns">
+				Last save {{ exercice.date }}
+			</div>
+		</div>
 		<div class="row">
 			<div class="small-3 columns">
 				<a v-if="$route.params.index > 1" v-link="{name: 'pass', params: {interviewToken: interview.token, index: +$route.params.index - 1} }" class="button fa fa-caret-left">Previous</a>
@@ -119,9 +119,8 @@ export default {
 			var exercice = this.$resource('interview/' + this.$route.params.interviewToken + '/exercices/' + this.exercice.uid)
 
 			exercice.update({answer: this.exercice.answer}).then(function (response) {
-
+				this.exercice.date = response.data.date
 			}, function (response) {
-				// TODO error handling
 			})
 		}
 	},

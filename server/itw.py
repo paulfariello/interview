@@ -14,7 +14,7 @@
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 import peewee
-from peewee import PrimaryKeyField, IntegerField, CharField, UUIDField, ForeignKeyField, DateTimeField
+from peewee import PrimaryKeyField, IntegerField, CharField, UUIDField, ForeignKeyField, DateTimeField, datetime
 import playhouse.db_url
 from urllib.parse import urlparse
 
@@ -43,7 +43,7 @@ def connect(url):
 
 def create_tables():
     """Create required table if necessary"""
-    DB.create_tables([Applicant, Interview, Exercice, Tag, ExerciceTagRel, Answer])
+    DB.create_tables([Applicant, Interview, Exercice, Tag, ExerciceTagRel, ExerciceAttribution, Answer])
 
 
 class JSONObject():
@@ -121,13 +121,12 @@ class ExerciceTagRel(ItwModel):
     tag = ForeignKeyField(Tag, related_name='exercices')
     exercice = ForeignKeyField(Exercice, related_name='tags')
 
-class Answer(ItwModel):
-    """Exercice Interview many-to-many relationship also storing answers"""
+class ExerciceAttribution(ItwModel):
+    """Exercice Interview many-to-many relationship also linking to answers"""
     _id = PrimaryKeyField()
     interview = ForeignKeyField(Interview, related_name='exercices')
     exercice = ForeignKeyField(Exercice)
     index = IntegerField()
-    answer = CharField(null=True)
 
     class Meta:
         indexes = ((('interview', 'exercice'), True),
@@ -139,5 +138,16 @@ class Answer(ItwModel):
                 "uid": uniqid.encode(self.exercice.uid),
                 "question": self.exercice.question,
                 "tags": [rel.tag.json for rel in self.exercice.tags],
-                "index": self.index,
-                "answer": self.answer}
+                "index": self.index}
+
+class Answer(ItwModel):
+    """Exercice answer"""
+    _id = PrimaryKeyField()
+    exercice = ForeignKeyField(ExerciceAttribution, related_name='answers')
+    answer = CharField(null=True)
+    date = DateTimeField(default=datetime.datetime.now)
+
+    @property
+    def json(self):
+        return {"answer": self.answer,
+                "date": self.date.isoformat()}

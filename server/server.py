@@ -184,14 +184,14 @@ def attach_exercice(interview_id, index):
         interview = itw.Interview.get(itw.Interview.uid == uid)
         uid = uniqid.decode(bottle.request.json['exercice'])
         exercice = itw.Exercice.get(itw.Exercice.uid == uid)
-        answer = itw.Answer.create(interview=interview, exercice=exercice, index=index)
+        exercice = itw.ExerciceAttribution.create(interview=interview, exercice=exercice, index=index)
     except itw.Interview.DoesNotExist as e:
         bottle.response.status = 404
         return {"error": "Interview %s not found" % interview_id}
     except itw.Exercice.DoesNotExist as e:
         bottle.response.status = 404
         return {"error": "Exercice %s not found" % exercice_id}
-    return json.dumps(answer.json, indent="  ")
+    return json.dumps(exercice.json, indent="  ")
 
 
 @bottle.post(r"/api/interview/<interview_id:re:[a-zA-Z0-9_=-]+>/exercices/")
@@ -205,18 +205,19 @@ def attach_exercice(interview_id):
         uid = uniqid.decode(interview_id)
         # TODO commit
         interview = itw.Interview.get(itw.Interview.uid == uid)
-        max_index = itw.Answer.select().where(itw.Answer.interview == interview).aggregate(fn.Max(itw.Answer.index))
+        max_index = itw.ExerciceAttribution.select().where(itw.ExerciceAttribution.interview == interview)\
+                       .aggregate(fn.Max(itw.ExerciceAttribution.index))
         max_index = max_index or 0
         uid = uniqid.decode(bottle.request.json['exercice'])
         exercice = itw.Exercice.get(itw.Exercice.uid == uid)
-        answer = itw.Answer.create(interview=interview, exercice=exercice, index=max_index+1)
+        exercice = itw.ExerciceAttribution.create(interview=interview, exercice=exercice, index=max_index+1)
     except itw.Interview.DoesNotExist as e:
         bottle.response.status = 404
         return {"error": "Interview %s not found" % interview_id}
     except itw.Exercice.DoesNotExist as e:
         bottle.response.status = 404
         return {"error": "Exercice %s not found" % exercice_id}
-    return json.dumps(answer.json, indent="  ")
+    return json.dumps(exercice.json, indent="  ")
 
 
 @bottle.delete(r"/api/interview/<interview_id:re:[a-zA-Z0-9_=-]+>/exercices/<exercice_id:re:[a-zA-Z0-9_=-]+>")
@@ -231,8 +232,9 @@ def detach_exercice(interview_id, exercice_id):
         interview = itw.Interview.get(itw.Interview.uid == uid)
         uid = uniqid.decode(exercice_id)
         exercice = itw.Exercice.get(itw.Exercice.uid == uid)
-        where = (itw.Answer.interview == interview) & (itw.Answer.exercice == exercice)
-        itw.Answer.delete().where(where).execute()
+        where = (itw.ExerciceAttribution.interview == interview) \
+                & (itw.ExerciceAttribution.exercice == exercice)
+        itw.ExerciceAttribution.delete().where(where).execute()
     except itw.Interview.DoesNotExist as e:
         bottle.response.status = 404
         return {"error": "Interview %s not found" % interview_id}
@@ -242,7 +244,7 @@ def detach_exercice(interview_id, exercice_id):
 
 @bottle.route(r"/api/interview/<interview_token_or_id:re:[a-zA-Z0-9_=-]+>/exercices/<index:int>", method='GET')
 def get_answer(interview_token_or_id, index):
-    """Get answer a given exercice
+    """Get answer of a given exercice
 
     Exemple:
     curl -X GET -H "Content-Type:application/json" http://localhost:8001/api/interview/PoP93u9ktzqIP5-cJx1D9D/exercices/1
@@ -251,15 +253,26 @@ def get_answer(interview_token_or_id, index):
         uid = uniqid.decode(interview_token_or_id)
         where = (itw.Interview.uid == uid) | (itw.Interview.token == uid)
         interview = itw.Interview.get(where)
-        where = (itw.Answer.interview == interview) & (itw.Answer.index == index)
-        answer = itw.Answer.get(where)
+        where = (itw.ExerciceAttribution.interview == interview) \
+                & (itw.ExerciceAttribution.index == index)
+        exercice = itw.ExerciceAttribution.get(where)
+        try:
+            answer = itw.Answer.select().where(itw.Answer.exercice==exercice)\
+                               .order_by(itw.Answer.date.desc()).limit(1).get()
+        except itw.Answer.DoesNotExist as e:
+            answer = None
     except itw.Interview.DoesNotExist as e:
         bottle.response.status = 404
         return {"error": "Interview %s not found" % interview_token_or_id}
-    except itw.Answer.DoesNotExist as e:
+    except itw.ExerciceAttribution.DoesNotExist as e:
         bottle.response.status = 404
         return {"error": "Exercice %s not found" % index}
-    return json.dumps(answer.json, indent="  ")
+    dump = exercice.json
+    if answer:
+        dump.update(answer.json)
+    else:
+        dump.update({"answer": ""})
+    return json.dumps(dump, indent="  ")
 
 @bottle.route(r"/api/interview/<interview_token:re:[a-zA-Z0-9_=-]+>/exercices/<exercice_id:re:[a-zA-Z0-9_=-]+>", method='PUT')
 def answer_exercice(interview_token, exercice_id):
@@ -274,16 +287,19 @@ def answer_exercice(interview_token, exercice_id):
         uid = uniqid.decode(exercice_id)
         exercice = itw.Exercice.get(itw.Exercice.uid == uid)
         answer = bottle.request.json['answer']
-        # Postgresql support RETURNING keyword, could be cleaner.
-        where = (itw.Answer.interview == interview) & (itw.Answer.exercice == exercice)
-        answer = itw.Answer.update(answer=answer).where(where).execute()
-        answer = itw.Answer.get(where)
+        where = (itw.ExerciceAttribution.interview == interview) \
+                & (itw.ExerciceAttribution.exercice == exercice)
+        exercice = itw.ExerciceAttribution.get(where)
+        answer = itw.Answer.create(exercice=exercice, answer=answer)
     except itw.Interview.DoesNotExist as e:
         bottle.response.status = 404
         return {"error": "Interview %s not found" % interview_id}
-    except itw.Answer.DoesNotExist as e:
+    except itw.Exercice.DoesNotExist as e:
         bottle.response.status = 404
-        return {"error": "Exercice %s not found" % index}
+        return {"error": "Exercice %s not found" % exercice_id}
+    except itw.ExerciceAttribution.DoesNotExist as e:
+        bottle.response.status = 404
+        return {"error": "ExerciceAttribution not found"}
     return json.dumps(answer.json, indent="  ")
 
 
