@@ -1,9 +1,9 @@
-7153621661_2c0e057402_o.jpg
-===========================
+99129170_7d542023a6_o.jpg
+=========================
 
-Original photo by Kenny Louie
+Original photo by Stewart Butterfield
 Downloaded at:
-https://flic.kr/p/bU9buv
+https://www.flickr.com/photos/stewart/99129170/
 Released under Creative Common Attribution 2.0 Generic:
 
 You are free to:

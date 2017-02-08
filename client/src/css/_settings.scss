@@ -44,15 +44,13 @@
 // 1. Global
 // ---------
 
-$interview-blue: #226666;
+$interview-blue: #1b9be3;
 $interview-red: #aa3939;
 $interview-orange: #aa6c39;
-$interview-green: #2D882D;
+$interview-green: #2d882d;
 $global-font-size: 100%;
 $global-width: rem-calc(1200);
 $global-lineheight: 1.5;
-$primary-color: $interview-red;
-$secondary-color: $interview-blue;
 $success-color: #3adb76;
 $warning-color: #ffae00;
 $alert-color: #ec5840;
@@ -61,6 +59,8 @@ $medium-gray: #cacaca;
 $dark-gray: #8a8a8a;
 $black: #0a0a0a;
 $white: #fefefe;
+$primary-color: $interview-blue;
+$secondary-color: $white;
 $body-background: $white;
 $body-font-color: $black;
 $body-font-family: 'Open Sans', 'Helvetica Neue', Helvetica, Roboto, Arial, sans-serif;
@@ -547,6 +547,6 @@ $tooltip-radius: $global-radius;
 // -----------
 
 $topbar-padding: 0.5rem;
-$topbar-background: $interview-red;
+$topbar-background: $interview-blue;
 $topbar-title-spacing: 1rem;
 $topbar-input-width: 200px;
