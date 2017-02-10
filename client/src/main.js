@@ -19,13 +19,16 @@ import Landing from './landing'
 import Loading from './loading'
 import Interview from './interview'
 import Pass from './pass'
+import Review from './review'
 import Progress from './progress'
+import Pagination from './pagination'
 
 Vue.use(VueRouter)
 Vue.use(VueResource)
 
 Vue.component('loading', Loading)
 Vue.component('progress', Progress)
+Vue.component('pagination', Pagination)
 
 Vue.directive('tinymce', {
 	params: ['update'],
@@ -76,6 +79,10 @@ router.map({
 	'/interview/:interviewToken/pass/:index': {
 		name: 'pass',
 		component: Pass
+	},
+	'/interview/:interviewToken/review/:index': {
+		name: 'review',
+		component: Review
 	}
 })
 

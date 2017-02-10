@@ -6,12 +6,9 @@
 			</div>
 		</div>
 		<div class="row">
-			<div class="small-1 columns">
-			</div>
-			<div class="small-10 columns">
-				{{{ exercice.question }}}<span v-for="tag in exercice.tags" class="label">{{tag}}</span>
-			</div>
-			<div class="small-1 columns">
+			<div class="small-12 columns">
+				<h2>{{{ exercice.question }}}</h2>
+				<span v-for="tag in exercice.tags" class="label float-right">{{tag}}</span>
 			</div>
 		</div>
 		<form>
@@ -27,13 +24,8 @@
 			</div>
 		</div>
 		<div class="row">
-			<div class="small-3 columns">
-				<a v-if="$route.params.index > 1" v-link="{name: 'pass', params: {interviewToken: interview.token, index: +$route.params.index - 1} }" class="button fa fa-caret-left">Previous</a>
-			</div>
-			<div class="small-6 columns">
-			</div>
-			<div class="small-3 columns">
-				<a v-if="$route.params.index < interview.exercices.length" v-link="{name: 'pass', params: {interviewToken: interview.token, index: +$route.params.index + 1} }"class="button fa-after fa-caret-right-after">Next</a>
+			<div class="small-12 columns">
+				<pagination :total="interview.exercices.length" :current="$route.params.index"></pagination>
 			</div>
 		</div>
 	</template>

@@ -9,6 +9,9 @@
 				<a class="button" v-link="{ name: 'pass', params: { interviewToken: interview.token, index: 0 } }">
 					<i class="fa fa-play fa-lg fa-fw"></i>Pass interview
 				</a>
+				<a class="button" v-link="{ name: 'review', params: { interviewToken: interview.token, index: 1 } }">
+					<i class="fa fa-eye fa-lg fa-fw"></i>Review interview
+				</a>
 			</div>
 		</div>
 		<div class="row">
