@@ -33,7 +33,7 @@
 			<div class="small-6 columns">
 			</div>
 			<div class="small-3 columns">
-				<a v-if="$route.params.index < 10" v-link="{name: 'pass', params: {interviewToken: interview.token, index: +$route.params.index + 1} }"class="button fa-after fa-caret-right-after">Next</a>
+				<a v-if="$route.params.index < interview.exercices.length" v-link="{name: 'pass', params: {interviewToken: interview.token, index: +$route.params.index + 1} }"class="button fa-after fa-caret-right-after">Next</a>
 			</div>
 		</div>
 	</template>
