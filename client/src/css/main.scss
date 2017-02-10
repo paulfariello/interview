@@ -73,3 +73,8 @@ h3 {
 	border-bottom: 3px solid $primary-color;
 	color: $primary-color;
 }
+
+button.fa-play + div.progress,
+button.fa-pause + div.progress {
+	margin-left: 1em;
+}

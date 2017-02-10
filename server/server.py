@@ -257,8 +257,8 @@ def get_answer(interview_token_or_id, index):
                 & (itw.ExerciceAttribution.index == index)
         exercice = itw.ExerciceAttribution.get(where)
         try:
-            answer = itw.Answer.select().where(itw.Answer.exercice==exercice)\
-                               .order_by(itw.Answer.date.desc()).limit(1).get()
+            answers = itw.Answer.select().where(itw.Answer.exercice==exercice)\
+                               .order_by(itw.Answer.date).execute()
         except itw.Answer.DoesNotExist as e:
             answer = None
     except itw.Interview.DoesNotExist as e:
@@ -268,10 +268,10 @@ def get_answer(interview_token_or_id, index):
         bottle.response.status = 404
         return {"error": "Exercice %s not found" % index}
     dump = exercice.json
-    if answer:
-        dump.update(answer.json)
+    if answers:
+        dump['history'] = [answer.json for answer in answers]
     else:
-        dump.update({"answer": ""})
+        dump['history'] = {}
     return json.dumps(dump, indent="  ")
 
 @bottle.route(r"/api/interview/<interview_token:re:[a-zA-Z0-9_=-]+>/exercices/<exercice_id:re:[a-zA-Z0-9_=-]+>", method='PUT')

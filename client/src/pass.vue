@@ -65,8 +65,9 @@ export default {
 			'exercice': {
 				'uid': '',
 				'question': '',
-				'answer': '',
 				'index': 0,
+				'answer': '',
+				'date': '',
 				'tags': []
 			}
 		}
@@ -97,10 +98,12 @@ export default {
 				var exercice = this.$resource('interview/{token}/exercices/{index}')
 				exercice.get({
 					token: this.$route.params.interviewToken,
-					index: this.$route.params.index,
-					answer: this.$route.params.answer
+					index: this.$route.params.index
 				}).then(function (response) {
 					this.exercice = response.data
+					var answer = this.exercice.history[this.exercice.history.length - 1]
+					this.exercice.answer = answer.answer
+					this.exercice.date = answer.date
 				}).catch(function () {
 				})
 			}
