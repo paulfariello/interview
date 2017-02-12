@@ -1,62 +1,76 @@
 <template>
-	<template v-if="$route.params.index > 0">
-		<div class="row">
-			<div class="small-12 columns">
-				<progress :progress="interview.exercices | answeredCount" :total="interview.exercices.length"></progress>
-			</div>
-		</div>
-		<div class="row">
-			<div class="small-12 columns">
-				<h2>{{{ exercice.question }}}</h2>
-				<span v-for="tag in exercice.tags" class="label float-right">{{tag}}</span>
-			</div>
-		</div>
-		<form>
-			<div class="row">
-				<div class="small-12 columns">
-					<textarea v-tinymce="exercice.answer" :update="save" required></textarea>
-				</div>
-			</div>
-		</form>
-		<div class="row">
-			<div v-if="exercice.date !== undefined" class="small-12 columns">
-				Last save {{ exercice.date }}
-			</div>
-		</div>
-		<div class="row">
-			<div class="small-12 columns">
-				<pagination :total="interview.exercices.length" :current="$route.params.index"></pagination>
-			</div>
-		</div>
+<div>
+	<template v-if="$loading">
+		<loading></loading>
 	</template>
 	<template v-else>
-		<div class="row">
-			<div class="small-12 columns">
-				<h2><a v-link="{ name: 'pass', params: { interviewToken: interview.token } }"><i class="fa fa-mortar-board fa-lg fa-fw"></i>{{ interview.applicant.name }}</a></h2>
+		<template v-if="$route.params.index > 0">
+			<div class="row">
+				<div class="small-12 columns">
+					<progression :progress="interview.exercices.length" :total="interview.exercices.length"></progression>
+				</div>
 			</div>
-		</div>
-		<div class="row">
-			<div class="small-12 columns">
-				{{interview.exercices.length}} questions over the following topics:
+			<div class="row">
+				<div class="small-12 columns">
+					<h2 v-html="exercice.question"></h2>
+					<span v-for="tag in exercice.tags" class="label float-right">{{tag}}</span>
+				</div>
 			</div>
-		</div>
-		<div class="row">
-			<div class="small-12 columns">
-				<span v-for="tag in tags" class="label">{{tag}}</span>
+			<form>
+				<div class="row">
+					<div class="small-12 columns">
+						<tinymce v-model="exercice.answer"></tinymce>
+					</div>
+				</div>
+			</form>
+			<div class="row">
+				<div v-if="exercice.date !== undefined" class="small-12 columns">
+					Last save {{ exercice.date }}
+				</div>
 			</div>
-		</div>
-		<div class="row">
-			<div class="small-12 columns">
-				<a class="button" v-link="{ name: 'pass', params: { interviewToken: interview.token, index: 1 } }">Let's go !</a>
+			<div class="row">
+				<div class="small-12 columns">
+					<pagination :total="interview.exercices.length" :current="$route.params.index"></pagination>
+				</div>
 			</div>
-		</div>
+		</template>
+		<template v-else>
+			<div class="row">
+				<div class="small-12 columns">
+					<h2><router-link :to="{ name: 'pass', params: { interviewToken: interview.token } }"><i class="fa fa-mortar-board fa-lg fa-fw"></i>{{ interview.applicant.name }}</router-link></h2>
+				</div>
+			</div>
+			<div class="row">
+				<div class="small-12 columns">
+					{{interview.exercices.length}} questions over the following topics:
+				</div>
+			</div>
+			<div class="row">
+				<div class="small-12 columns">
+					<span v-for="tag in tags" class="label">{{tag}}</span>
+				</div>
+			</div>
+			<div class="row">
+				<div class="small-12 columns">
+					<router-link class="button" :to="{ name: 'pass', params: { interviewToken: interview.token, index: 1 } }">Let's go !</router-link>
+				</div>
+			</div>
+		</template>
 	</template>
+</div>
 </template>
 
 <script>
+import TinyMCE from 'components/tinymce'
+
 export default {
+	name: 'pass',
+	components: {
+		'tinymce': TinyMCE
+	},
 	data () {
 		return {
+			'loading': true,
 			'interview': {
 				'applicant': {'name': ''},
 				'token': '',
@@ -68,12 +82,27 @@ export default {
 				'index': 0,
 				'answer': '',
 				'date': '',
-				'tags': []
+				'tags': [],
+				'history': []
 			}
 		}
 	},
-	route: {
-		data () {
+	watch: {
+		'$route': 'fetchData',
+		'exercice.answer': function () {
+			var exercice = this.$resource('interview/' + this.$route.params.interviewToken + '/exercices/' + this.exercice.uid)
+
+			exercice.update({answer: this.exercice.answer}).then(function (response) {
+				this.exercice.date = response.data.date
+			}, function (response) {
+			})
+		}
+	},
+	created () {
+		this.fetchData()
+	},
+	methods: {
+		fetchData () {
 			var interview = this.$resource('interview/{token}/pass')
 			interview.get({token: this.$route.params.interviewToken}).then(function (response) {
 				this.interview = response.data
@@ -100,23 +129,16 @@ export default {
 					token: this.$route.params.interviewToken,
 					index: this.$route.params.index
 				}).then(function (response) {
+					var answer = response.data.history[response.data.history.length - 1]
+					if (answer !== undefined) {
+						response.data.answer = answer.answer
+						response.data.date = answer.date
+					} else {
+						response.data.answer = ''
+					}
 					this.exercice = response.data
-					var answer = this.exercice.history[this.exercice.history.length - 1]
-					this.exercice.answer = answer.answer
-					this.exercice.date = answer.date
-				}).catch(function () {
 				})
 			}
-		}
-	},
-	methods: {
-		save () {
-			var exercice = this.$resource('interview/' + this.$route.params.interviewToken + '/exercices/' + this.exercice.uid)
-
-			exercice.update({answer: this.exercice.answer}).then(function (response) {
-				this.exercice.date = response.data.date
-			}, function (response) {
-			})
 		}
 	},
 	filters: {

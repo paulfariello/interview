@@ -21,6 +21,7 @@
 
 <script>
 export default {
+	name: 'landing',
 	data () {
 		return {
 			'name': ''
@@ -34,7 +35,7 @@ export default {
 				var interview = this.$resource('interview/{id}')
 
 				interview.save({applicant: response.data.uid}).then(function (response) {
-					this.$router.go({name: 'interview', params: { interviewId: response.data.uid }})
+					this.$router.push({name: 'interview', params: { interviewId: response.data.uid }})
 				}, function (response) {
 					// TODO error handling
 				})

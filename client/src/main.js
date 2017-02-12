@@ -7,83 +7,28 @@ import 'foundation-sites/js/foundation.util.triggers.js'
 import 'foundation-sites/js/foundation.util.mediaQuery.js'
 import 'foundation-sites/js/foundation.util.motion.js'
 import 'foundation-sites/js/foundation.reveal.js'
-import tinymce from 'tinymce'
-import 'tinymce/themes/modern/theme'
-import 'tinymce/skins/lightgray/content.min.css'
-import 'tinymce/skins/lightgray/skin.min.css'
 import Vue from 'vue'
-import VueRouter from 'vue-router'
 import VueResource from 'vue-resource'
-import App from './app'
-import Landing from './landing'
-import Loading from './loading'
-import Interview from './interview'
-import Pass from './pass'
-import Review from './review'
-import Progress from './progress'
-import Pagination from './pagination'
 
-Vue.use(VueRouter)
+import App from './app'
+import Loading from './components/loading'
+import Progress from './components/progress'
+import Pagination from './components/pagination'
+import router from './router'
+
 Vue.use(VueResource)
 
 Vue.component('loading', Loading)
-Vue.component('progress', Progress)
+Vue.component('progression', Progress)
 Vue.component('pagination', Pagination)
-
-Vue.directive('tinymce', {
-	params: ['update'],
-	twoWay: true,
-	bind: function () {
-		var self = this
-		tinymce.init({
-			target: this.el,
-			skin: false,
-			init_instance_callback: function (editor) {
-				self.editor = editor
-				editor.on('change', function (e) {
-					editor.save()
-					self.set(self.el.value)
-					if (self.params.update) {
-						self.params.update(self.el.value)
-					}
-				})
-			}
-		})
-	},
-	update: function (value) {
-		if (this.editor !== undefined) {
-			if (value !== null) {
-				this.editor.setContent(value)
-			} else {
-				this.editor.setContent('')
-			}
-		}
-	}
-})
 
 Vue.http.options.root = '/api'
 
-const router = new VueRouter({
-	history: false,
-	saveScrollPosition: true
+/* eslint-disable no-new */
+new Vue({
+	name: 'main',
+	el: '#app',
+	router: router,
+	template: '<app/>',
+	components: { App }
 })
-
-router.map({
-	'/': {
-		component: Landing
-	},
-	'/interview/:interviewId': {
-		name: 'interview',
-		component: Interview
-	},
-	'/interview/:interviewToken/pass/:index': {
-		name: 'pass',
-		component: Pass
-	},
-	'/interview/:interviewToken/review/:index': {
-		name: 'review',
-		component: Review
-	}
-})
-
-router.start(App, 'body')
