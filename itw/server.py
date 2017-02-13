@@ -27,24 +27,25 @@ import datetime
 from peewee import fn
 
 import uniqid
-import itw
+import model
 
 ISO8601_FMT = "%Y-%m-%d"
 STATIC_ROOT = None
 
+app = application = bottle.Bottle()
 
 def strpdate(date):
     return datetime.datetime.strptime(date[:10], ISO8601_FMT).date()
 
-@bottle.get("/")
-@bottle.get(r"/<path:re:.*\.(html|js|css|woff2|woff|ttf|jpg)>")
+@app.get("/")
+@app.get(r"/<path:re:.*\.(html|js|css|woff2|woff|ttf|jpg)>")
 def static(path=None):
     """Unsafe method used only for dev"""
     if path is None:
         path = "index.html"
     return bottle.static_file(path, root=STATIC_ROOT)
 
-@bottle.get(r"/api/status")
+@app.get(r"/api/status")
 def create_account():
     """Get server status
 
@@ -53,7 +54,7 @@ def create_account():
     """
     return json.dumps({'status': 'OK'})
 
-@bottle.post(r"/api/applicant/")
+@app.post(r"/api/applicant/")
 def create_applicant():
     """Create a new applicant
 
@@ -62,11 +63,11 @@ def create_applicant():
     """
     uid = uniqid.generate()
     name = bottle.request.json['name']
-    applicant = itw.Applicant.create(uid=uid, name=name)
+    applicant = model.Applicant.create(uid=uid, name=name)
     return json.dumps(applicant.json, indent="  ")
 
 
-@bottle.get(r"/api/applicant/<applicant_id:re:[a-zA-Z0-9_=-]+>")
+@app.get(r"/api/applicant/<applicant_id:re:[a-zA-Z0-9_=-]+>")
 def get_applicant(applicant_id):
     """Get applicant description
 
@@ -75,14 +76,14 @@ def get_applicant(applicant_id):
     """
     try:
         uid = uniqid.decode(applicant_id)
-        applicant = itw.Applicant.get(itw.Applicant.uid == uid)
-    except itw.Applicant.DoesNotExist as e:
+        applicant = model.Applicant.get(model.Applicant.uid == uid)
+    except model.Applicant.DoesNotExist as e:
         bottle.response.status = 404
         return {"error": "Applicant %s not found" % applicant_id}
     return json.dumps(applicant.json, indent="  ")
 
 
-@bottle.post(r"/api/interview/")
+@app.post(r"/api/interview/")
 def create_interview():
     """Create a new interview
 
@@ -91,27 +92,27 @@ def create_interview():
     """
     try:
         uid = uniqid.decode(bottle.request.json['applicant'])
-        applicant = itw.Applicant.get(itw.Applicant.uid == uid)
+        applicant = model.Applicant.get(model.Applicant.uid == uid)
         uid = uniqid.generate()
         token = uniqid.generate()
-        interview = itw.Interview.create(uid=uid, token=token, applicant=applicant)
-    except itw.Applicant.DoesNotExist as e:
+        interview = model.Interview.create(uid=uid, token=token, applicant=applicant)
+    except model.Applicant.DoesNotExist as e:
         bottle.response.status = 404
         return {"error": "Applicant %s not found" % applicant_id}
     return json.dumps(interview.json, indent="  ")
 
-@bottle.get(r"/api/interview/")
+@app.get(r"/api/interview/")
 def get_interview():
     """Get all interview
 
     Exemple:
     curl -X GET -H "Content-Type:application/json" http://localhost:8001/api/interview/
     """
-    interviews = itw.Interview.select().execute()
+    interviews = model.Interview.select().execute()
     return json.dumps([interview.json for interview in interviews], indent="  ")
 
 
-@bottle.get(r"/api/interview/<interview_id:re:[a-zA-Z0-9_=-]+>")
+@app.get(r"/api/interview/<interview_id:re:[a-zA-Z0-9_=-]+>")
 def get_interview(interview_id):
     """Get interview description
 
@@ -120,14 +121,14 @@ def get_interview(interview_id):
     """
     try:
         uid = uniqid.decode(interview_id)
-        interview = itw.Interview.get(itw.Interview.uid == uid)
-    except itw.Interview.DoesNotExist as e:
+        interview = model.Interview.get(model.Interview.uid == uid)
+    except model.Interview.DoesNotExist as e:
         bottle.response.status = 404
         return {"error": "Interview %s not found" % interview_id}
     return json.dumps(interview.json, indent="  ")
 
 
-@bottle.get(r"/api/interview/<interview_token:re:[a-zA-Z0-9_=-]+>/pass")
+@app.get(r"/api/interview/<interview_token:re:[a-zA-Z0-9_=-]+>/pass")
 def pass_interview(interview_token):
     """Get interview description for an applicant to pass
 
@@ -136,8 +137,8 @@ def pass_interview(interview_token):
     """
     try:
         token = uniqid.decode(interview_token)
-        interview = itw.Interview.get(itw.Interview.token == token)
-    except itw.Interview.DoesNotExist as e:
+        interview = model.Interview.get(model.Interview.token == token)
+    except model.Interview.DoesNotExist as e:
         bottle.response.status = 404
         return {"error": "Interview %s not found" % interview_id}
     pass_json = interview.json
@@ -145,7 +146,7 @@ def pass_interview(interview_token):
     return json.dumps(pass_json, indent="  ")
 
 
-@bottle.post(r"/api/exercice/")
+@app.post(r"/api/exercice/")
 def create_exercice():
     """Create a new exercice
 
@@ -154,25 +155,25 @@ def create_exercice():
     """
     uid = uniqid.generate()
     question = bottle.request.json['question']
-    exercice = itw.Exercice.create(uid=uid, question=question)
+    exercice = model.Exercice.create(uid=uid, question=question)
     for tag in bottle.request.json['tags']:
-        tag, created = itw.Tag.get_or_create(name=tag)
-        rel = itw.ExerciceTagRel.create(exercice=exercice, tag=tag)
+        tag, created = model.Tag.get_or_create(name=tag)
+        rel = model.ExerciceTagRel.create(exercice=exercice, tag=tag)
     return json.dumps(exercice.json, indent="  ")
 
 
-@bottle.get(r"/api/exercice/")
+@app.get(r"/api/exercice/")
 def get_exercice():
     """Create a new exercice
 
     Exemple:
     curl -X GET -H "Content-Type:application/json" http://localhost:8001/api/exercice/
     """
-    exercices = itw.Exercice.select().execute()
+    exercices = model.Exercice.select().execute()
     return json.dumps([exercice.json for exercice in exercices], indent="  ")
 
 
-@bottle.put(r"/api/interview/<interview_id:re:[a-zA-Z0-9_=-]+>/exercices/<index:int>")
+@app.put(r"/api/interview/<interview_id:re:[a-zA-Z0-9_=-]+>/exercices/<index:int>")
 def attach_exercice(interview_id, index):
     """Attach an exercice at a given position in an interview
 
@@ -181,20 +182,20 @@ def attach_exercice(interview_id, index):
     """
     try:
         uid = uniqid.decode(interview_id)
-        interview = itw.Interview.get(itw.Interview.uid == uid)
+        interview = model.Interview.get(model.Interview.uid == uid)
         uid = uniqid.decode(bottle.request.json['exercice'])
-        exercice = itw.Exercice.get(itw.Exercice.uid == uid)
-        exercice = itw.ExerciceAttribution.create(interview=interview, exercice=exercice, index=index)
-    except itw.Interview.DoesNotExist as e:
+        exercice = model.Exercice.get(model.Exercice.uid == uid)
+        exercice = model.ExerciceAttribution.create(interview=interview, exercice=exercice, index=index)
+    except model.Interview.DoesNotExist as e:
         bottle.response.status = 404
         return {"error": "Interview %s not found" % interview_id}
-    except itw.Exercice.DoesNotExist as e:
+    except model.Exercice.DoesNotExist as e:
         bottle.response.status = 404
         return {"error": "Exercice %s not found" % exercice_id}
     return json.dumps(exercice.json, indent="  ")
 
 
-@bottle.post(r"/api/interview/<interview_id:re:[a-zA-Z0-9_=-]+>/exercices/")
+@app.post(r"/api/interview/<interview_id:re:[a-zA-Z0-9_=-]+>/exercices/")
 def attach_exercice(interview_id):
     """Attach an exercice at the end of an interview
 
@@ -204,23 +205,23 @@ def attach_exercice(interview_id):
     try:
         uid = uniqid.decode(interview_id)
         # TODO commit
-        interview = itw.Interview.get(itw.Interview.uid == uid)
-        max_index = itw.ExerciceAttribution.select().where(itw.ExerciceAttribution.interview == interview)\
-                       .aggregate(fn.Max(itw.ExerciceAttribution.index))
+        interview = model.Interview.get(model.Interview.uid == uid)
+        max_index = model.ExerciceAttribution.select().where(model.ExerciceAttribution.interview == interview)\
+                       .aggregate(fn.Max(model.ExerciceAttribution.index))
         max_index = max_index or 0
         uid = uniqid.decode(bottle.request.json['exercice'])
-        exercice = itw.Exercice.get(itw.Exercice.uid == uid)
-        exercice = itw.ExerciceAttribution.create(interview=interview, exercice=exercice, index=max_index+1)
-    except itw.Interview.DoesNotExist as e:
+        exercice = model.Exercice.get(model.Exercice.uid == uid)
+        exercice = model.ExerciceAttribution.create(interview=interview, exercice=exercice, index=max_index+1)
+    except model.Interview.DoesNotExist as e:
         bottle.response.status = 404
         return {"error": "Interview %s not found" % interview_id}
-    except itw.Exercice.DoesNotExist as e:
+    except model.Exercice.DoesNotExist as e:
         bottle.response.status = 404
         return {"error": "Exercice %s not found" % exercice_id}
     return json.dumps(exercice.json, indent="  ")
 
 
-@bottle.delete(r"/api/interview/<interview_id:re:[a-zA-Z0-9_=-]+>/exercices/<exercice_id:re:[a-zA-Z0-9_=-]+>")
+@app.delete(r"/api/interview/<interview_id:re:[a-zA-Z0-9_=-]+>/exercices/<exercice_id:re:[a-zA-Z0-9_=-]+>")
 def detach_exercice(interview_id, exercice_id):
     """Detach an exercice from an interview
 
@@ -229,20 +230,20 @@ def detach_exercice(interview_id, exercice_id):
     """
     try:
         uid = uniqid.decode(interview_id)
-        interview = itw.Interview.get(itw.Interview.uid == uid)
+        interview = model.Interview.get(model.Interview.uid == uid)
         uid = uniqid.decode(exercice_id)
-        exercice = itw.Exercice.get(itw.Exercice.uid == uid)
-        where = (itw.ExerciceAttribution.interview == interview) \
-                & (itw.ExerciceAttribution.exercice == exercice)
-        itw.ExerciceAttribution.delete().where(where).execute()
-    except itw.Interview.DoesNotExist as e:
+        exercice = model.Exercice.get(model.Exercice.uid == uid)
+        where = (model.ExerciceAttribution.interview == interview) \
+                & (model.ExerciceAttribution.exercice == exercice)
+        model.ExerciceAttribution.delete().where(where).execute()
+    except model.Interview.DoesNotExist as e:
         bottle.response.status = 404
         return {"error": "Interview %s not found" % interview_id}
-    except itw.Exercice.DoesNotExist as e:
+    except model.Exercice.DoesNotExist as e:
         bottle.response.status = 404
         return {"error": "Exercice %s not found" % exercice_id}
 
-@bottle.route(r"/api/interview/<interview_token_or_id:re:[a-zA-Z0-9_=-]+>/exercices/<index:int>", method='GET')
+@app.route(r"/api/interview/<interview_token_or_id:re:[a-zA-Z0-9_=-]+>/exercices/<index:int>", method='GET')
 def get_answer(interview_token_or_id, index):
     """Get answer of a given exercice
 
@@ -251,20 +252,20 @@ def get_answer(interview_token_or_id, index):
     """
     try:
         uid = uniqid.decode(interview_token_or_id)
-        where = (itw.Interview.uid == uid) | (itw.Interview.token == uid)
-        interview = itw.Interview.get(where)
-        where = (itw.ExerciceAttribution.interview == interview) \
-                & (itw.ExerciceAttribution.index == index)
-        exercice = itw.ExerciceAttribution.get(where)
+        where = (model.Interview.uid == uid) | (model.Interview.token == uid)
+        interview = model.Interview.get(where)
+        where = (model.ExerciceAttribution.interview == interview) \
+                & (model.ExerciceAttribution.index == index)
+        exercice = model.ExerciceAttribution.get(where)
         try:
-            answers = itw.Answer.select().where(itw.Answer.exercice==exercice)\
-                               .order_by(itw.Answer.date).execute()
-        except itw.Answer.DoesNotExist as e:
+            answers = model.Answer.select().where(model.Answer.exercice==exercice)\
+                               .order_by(model.Answer.date).execute()
+        except model.Answer.DoesNotExist as e:
             answer = None
-    except itw.Interview.DoesNotExist as e:
+    except model.Interview.DoesNotExist as e:
         bottle.response.status = 404
         return {"error": "Interview %s not found" % interview_token_or_id}
-    except itw.ExerciceAttribution.DoesNotExist as e:
+    except model.ExerciceAttribution.DoesNotExist as e:
         bottle.response.status = 404
         return {"error": "Exercice %s not found" % index}
     dump = exercice.json
@@ -274,7 +275,7 @@ def get_answer(interview_token_or_id, index):
         dump['history'] = {}
     return json.dumps(dump, indent="  ")
 
-@bottle.route(r"/api/interview/<interview_token:re:[a-zA-Z0-9_=-]+>/exercices/<exercice_id:re:[a-zA-Z0-9_=-]+>", method='PUT')
+@app.route(r"/api/interview/<interview_token:re:[a-zA-Z0-9_=-]+>/exercices/<exercice_id:re:[a-zA-Z0-9_=-]+>", method='PUT')
 def answer_exercice(interview_token, exercice_id):
     """Answer a given exercice
 
@@ -283,21 +284,21 @@ def answer_exercice(interview_token, exercice_id):
     """
     try:
         uid = uniqid.decode(interview_token)
-        interview = itw.Interview.get(itw.Interview.token == uid)
+        interview = model.Interview.get(model.Interview.token == uid)
         uid = uniqid.decode(exercice_id)
-        exercice = itw.Exercice.get(itw.Exercice.uid == uid)
+        exercice = model.Exercice.get(model.Exercice.uid == uid)
         answer = bottle.request.json['answer']
-        where = (itw.ExerciceAttribution.interview == interview) \
-                & (itw.ExerciceAttribution.exercice == exercice)
-        exercice = itw.ExerciceAttribution.get(where)
-        answer = itw.Answer.create(exercice=exercice, answer=answer)
-    except itw.Interview.DoesNotExist as e:
+        where = (model.ExerciceAttribution.interview == interview) \
+                & (model.ExerciceAttribution.exercice == exercice)
+        exercice = model.ExerciceAttribution.get(where)
+        answer = model.Answer.create(exercice=exercice, answer=answer)
+    except model.Interview.DoesNotExist as e:
         bottle.response.status = 404
         return {"error": "Interview %s not found" % interview_id}
-    except itw.Exercice.DoesNotExist as e:
+    except model.Exercice.DoesNotExist as e:
         bottle.response.status = 404
         return {"error": "Exercice %s not found" % exercice_id}
-    except itw.ExerciceAttribution.DoesNotExist as e:
+    except model.ExerciceAttribution.DoesNotExist as e:
         bottle.response.status = 404
         return {"error": "ExerciceAttribution not found"}
     return json.dumps(answer.json, indent="  ")
@@ -307,22 +308,24 @@ def main():
     """Start server"""
     parser = argparse.ArgumentParser(description="Interview")
     parser.add_argument("-l", "--listen", dest="host", default="0.0.0.0", help="IP address to bind to")
-    parser.add_argument("-p", "--port", dest="port", default=8001, type=int, help="Port to listen to")
-    parser.add_argument("--db", dest="db", default="sqlite:///interview.db", help="Database scheme to connect to")
+    parser.add_argument("-p", "--port", dest="port", default=os.environ.get('PORT', 8001), type=int,
+                        help="Port to listen to")
+    parser.add_argument("--db", dest="db", default=os.environ.get('POSTGRESQL_ADDON_URI', "sqlite:///interview.db"),
+                        help="Database scheme to connect to")
     parser.add_argument("--static", dest="static", default=None, type=str, help="Path to static files")
     parser.add_argument("--server", dest="server", default='auto', type=str, help="Bottle server type")
     parser.add_argument("--init", dest="init", action="store_true", help="Initialize database")
     args, remaining = parser.parse_known_args()
     sys.argv = [sys.executable] + remaining
 
-    itw.connect(args.db)
+    model.connect(args.db)
     if args.init:
-        itw.create_tables()
+        model.create_tables()
 
     global STATIC_ROOT
     STATIC_ROOT = args.static
 
-    bottle.run(server=args.server, host=args.host, port=args.port)
+    app.run(server=args.server, host=args.host, port=args.port)
 
 if __name__ == "__main__":
     main()
