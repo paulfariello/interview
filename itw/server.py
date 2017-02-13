@@ -19,6 +19,7 @@ Request to this REST API must be done with Content-Type: application/json as
 all sent data is expected to be well formed json.
 """
 
+import os
 import sys
 import argparse
 import bottle
@@ -26,8 +27,7 @@ import json
 import datetime
 from peewee import fn
 
-import uniqid
-import model
+from itw import uniqid, model
 
 ISO8601_FMT = "%Y-%m-%d"
 STATIC_ROOT = None

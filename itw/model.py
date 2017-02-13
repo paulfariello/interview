@@ -18,7 +18,7 @@ from peewee import PrimaryKeyField, IntegerField, CharField, UUIDField, ForeignK
 import playhouse.db_url
 from urllib.parse import urlparse
 
-import uniqid
+from itw import uniqid
 
 DB = peewee.Proxy()
 
