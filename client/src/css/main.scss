@@ -74,7 +74,10 @@ h3 {
 	color: $primary-color;
 }
 
-button.fa-play + div.progress,
-button.fa-pause + div.progress {
+div.media-control div.progress {
+	margin-left: 4em;
+}
+
+div.media-control button.fa-forward {
 	margin-left: 1em;
 }

@@ -3,7 +3,7 @@
 	<div class="row">
 		<div class="small-12 columns">
 			<h2>New interview</h2>
-			<form v-on:submit="createInterview">
+			<form v-on:submit.prevent="createInterview">
 				<div class="input-group">
 					<fieldset>
 						<legend>Applicant</legend>

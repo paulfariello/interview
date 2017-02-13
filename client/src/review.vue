@@ -25,11 +25,12 @@
 			</div>
 		</div>
 		<div class="row">
-			<div class="small-12 columns">
+			<div class="small-12 columns media-control">
 				<button v-if="playing" class="fa fa-pause float-left" v-on:click="pause"><span class="show-for-sr">Pause</span></button>
 				<button v-else class="fa fa-play float-left" v-on:click="play"><span class="show-for-sr">Play</span></button>
-				<div class="progress" role="progressbar" tabindex="0" v-bind:aria-valuenow="position() * 100" aria-valuemin="0" v-bind:aria-valuetext="position() * 100 + ' percent'" aria-valuemax="100">
-					<div class="progress-meter" v-bind:style="{width: position() * 100 + '%'}"></div>
+				<button class="fa fa-forward float-left" v-on:click="updateSpeed"><span class="show-for-sr">Speed</span>×{{speed}}</button>
+				<div class="progress" role="progressbar" tabindex="0" v-bind:aria-valuenow="position() * 100" aria-valuemin="0" v-bind:aria-valuetext="position() * 100 + ' percent'" aria-valuemax="100" v-on:click.self="setPositionFromBar">
+					<div class="progress-meter" v-bind:style="{width: position() * 100 + '%'}" v-on:click.stop="setPositionFromMeter"></div>
 				</div>
 			</div>
 		</div>
@@ -62,7 +63,8 @@ export default {
 				'tags': []
 			},
 			'current': 0,
-			'playing': false
+			'playing': false,
+			'speed': 1
 		}
 	},
 	watch: {
@@ -70,6 +72,10 @@ export default {
 	},
 	created () {
 		this.fetchData()
+		window.addEventListener('keyup', this.keyUp, true)
+	},
+	beforeDestroy: function () {
+		window.removeEventListener('keyup', this.keyUp)
 	},
 	methods: {
 		fetchData () {
@@ -105,6 +111,13 @@ export default {
 				})
 			}
 		},
+		keyUp (e) {
+			if (e.keyCode === 32) {
+				e.preventDefault()
+				e.stopPropagation()
+				this.playPause()
+			}
+		},
 		play () {
 			this.playing = true
 			if (this.current + 1 >= this.exercice.history.length) this.current = 0
@@ -113,11 +126,22 @@ export default {
 		pause () {
 			this.playing = false
 		},
+		playPause () {
+			if (!this.playing) {
+				this.play()
+			} else {
+				this.pause()
+			}
+		},
+		updateSpeed () {
+			this.speed = this.speed * 2 % 15
+		},
 		render () {
 			if (!this.playing) return
 			this.current++
 			if (this.current + 1 >= this.exercice.history.length) return
 			var timeout = Date.parse(this.exercice.history[this.current + 1].date) - Date.parse(this.exercice.history[this.current].date)
+			timeout = timeout / this.speed
 			setTimeout(this.render, timeout)
 		},
 		position () {
@@ -128,6 +152,27 @@ export default {
 				return (current - begin) / (end - begin)
 			} else {
 				return 1
+			}
+		},
+		setPositionFromBar (e) {
+			var position = e.offsetX / e.target.offsetWidth
+			this.setPosition(position)
+		},
+		setPositionFromMeter (e) {
+			var position = e.offsetX / e.target.offsetWidth * this.position()
+			this.setPosition(position)
+		},
+		setPosition (position) {
+			var begin = Date.parse(this.exercice.history[0].date)
+			var end = Date.parse(this.exercice.history[this.exercice.history.length - 1].date)
+			var current = begin + position * (end - begin)
+			var nearest = Infinity
+			for (var i in this.exercice.history) {
+				var distance = Math.abs(current - Date.parse(this.exercice.history[i].date))
+				if (distance < nearest) {
+					this.current = i
+					nearest = distance
+				}
 			}
 		}
 	},
