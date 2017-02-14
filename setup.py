@@ -5,14 +5,31 @@ import glob
 import subprocess
 
 from distutils.core import setup
-from setuptools.command.sdist import sdist
+from distutils.dist import Distribution
+from distutils.command.build import build
+
+build.sub_commands.append(('build_front', None))
 
 
-class SdistCommand(sdist):
+class FrontDistribution(Distribution):
+    def __init__(self, attrs=None):
+        self.front = None
+        super().__init__(attrs)
+
+
+class BuildFrontCommand(build):
+    def initialize_options(self):
+        self.path = None
+
+    def finalize_options(self):
+        self.path = self.distribution.front
+
     def run(self):
-        #subprocess.check_call(['npm', 'install'], cwd='client')
-        #subprocess.check_call(['node', 'build/build.js'], cwd='client')
-        super().run()
+        build.run(self)
+        subprocess.check_call(['npm', 'install'], cwd=self.path)
+        subprocess.check_call(['node', 'build/build.js'], cwd=self.path)
+
+    sub_commands = []
 
 
 setup(name='Interview',
@@ -22,9 +39,12 @@ setup(name='Interview',
       author_email='paul@fariello.eu',
       url='https://github.com/paulfariello/Interview',
       packages=['itw'],
+      front='client',
+      data_files=[('static', os.path.join('client', 'dist', 'index.html'))],
       classifiers=['Environment :: Web Environment',
                    'Intended Audience :: End Users/Desktop',
                    'Operating System :: POSIX',
                    'Programming Language :: Python',
                    'Programming Language :: Javascript'],
-      cmdclass={'sdist': SdistCommand})
+      distclass=FrontDistribution,
+      cmdclass={'build_front': BuildFrontCommand})
