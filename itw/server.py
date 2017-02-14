@@ -30,8 +30,13 @@ from peewee import fn
 from itw import uniqid, model
 
 ISO8601_FMT = "%Y-%m-%d"
-STATIC_ROOT = None
 
+config = {"host": os.environ.get('HOST', "0.0.0.0"),
+          "port": os.environ.get('PORT', 8001),
+          "db": os.environ.get('POSTGRESQL_ADDON_URI', "sqlite:///interview.db"),
+          "static_root": os.environ.get('STATIC_PATH', None),
+          "server": os.environ.get('SERVER', 'auto'),
+          "init": False}
 app = application = bottle.Bottle()
 
 def strpdate(date):
@@ -43,7 +48,7 @@ def static(path=None):
     """Unsafe method used only for dev"""
     if path is None:
         path = "index.html"
-    return bottle.static_file(path, root=STATIC_ROOT)
+    return bottle.static_file(path, root=config['static_root'])
 
 @app.get(r"/api/status")
 def create_account():
@@ -304,29 +309,26 @@ def answer_exercice(interview_token, exercice_id):
     return json.dumps(answer.json, indent="  ")
 
 
-def main():
-    """Start server"""
+if __name__ == "__main__":
+    """Parse opts"""
     parser = argparse.ArgumentParser(description="Interview")
-    parser.add_argument("-l", "--listen", dest="host", default="0.0.0.0", help="IP address to bind to")
-    parser.add_argument("-p", "--port", dest="port", default=os.environ.get('PORT', 8001), type=int,
-                        help="Port to listen to")
-    parser.add_argument("--db", dest="db", default=os.environ.get('POSTGRESQL_ADDON_URI', "sqlite:///interview.db"),
-                        help="Database scheme to connect to")
-    parser.add_argument("--static", dest="static", default=os.environ.get('STATIC_PATH', None), type=str,
-                        help="Path to static files")
-    parser.add_argument("--server", dest="server", default='auto', type=str, help="Bottle server type")
-    parser.add_argument("--init", dest="init", action="store_true", help="Initialize database")
+    parser.add_argument("-l", "--listen", dest="host", default=config['host'], type=str, help="IP address to bind to (default: %(default)s)")
+    parser.add_argument("-p", "--port", dest="port", default=config['port'], type=int, help="Port to listen to (default: %(default)i)")
+    parser.add_argument("--db", dest="db", default=config['db'], type=str, help="Database scheme to connect to (default: %(default)s)")
+    parser.add_argument("--static", dest="static_root", default=config['static_root'], type=str, help="Path to static files (default: %(default)s)")
+    parser.add_argument("--server", dest="server", default=config['server'], type=str, help="Bottle server type (default: %(default)s)")
+    parser.add_argument("--init", dest="init", action="store_true", help="Initialize database (default: %(default)s)")
     args, remaining = parser.parse_known_args()
     sys.argv = [sys.executable] + remaining
 
-    model.connect(args.db)
-    if args.init:
-        model.create_tables()
+    config.update(vars(args))
 
-    global STATIC_ROOT
-    STATIC_ROOT = args.static
+# Always connect to database
+model.connect(config['db'])
+if config['init']:
+    model.create_tables()
 
-    app.run(server=args.server, host=args.host, port=args.port)
 
 if __name__ == "__main__":
-    main()
+    """Run app"""
+    app.run(server=config['server'], host=config['host'], port=config['port'])
