@@ -312,7 +312,7 @@ def main():
                         help="Port to listen to")
     parser.add_argument("--db", dest="db", default=os.environ.get('POSTGRESQL_ADDON_URI', "sqlite:///interview.db"),
                         help="Database scheme to connect to")
-    parser.add_argument("--static", dest="static", default=os.environ.get('STATIC_FILES_PATH', None), type=str,
+    parser.add_argument("--static", dest="static", default=os.environ.get('STATIC_PATH', None), type=str,
                         help="Path to static files")
     parser.add_argument("--server", dest="server", default='auto', type=str, help="Bottle server type")
     parser.add_argument("--init", dest="init", action="store_true", help="Initialize database")
