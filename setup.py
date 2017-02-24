@@ -31,6 +31,13 @@ class BuildFrontCommand(build):
 
     sub_commands = []
 
+if 'CLEVERCLOUD' in os.environ:
+    # source /home/bas/.nvm/nvm.sh
+    proc = subprocess.Popen(". /home/bas/.nvm/nvm.sh; env", shell=True, stdout=subprocess.PIPE)
+    env, _ = proc.communicate()
+    env = env.decode()
+    env = env.splitlines()
+    os.environ.update(dict([var.split("=", 1) for var in env]))
 
 setup(name='Interview',
       version='1.0',
