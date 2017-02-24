@@ -33,9 +33,12 @@ class BuildFrontCommand(build):
 
 if 'CLEVERCLOUD' in os.environ:
     # source /home/bas/.nvm/nvm.sh
+    print("hello clevercloud")
+    print("Sourcing nvm environment")
     proc = subprocess.Popen(". /home/bas/.nvm/nvm.sh; env", shell=True, stdout=subprocess.PIPE)
     env, _ = proc.communicate()
     env = env.decode()
+    print(env)
     env = env.splitlines()
     os.environ.update(dict([var.split("=", 1) for var in env]))
 
